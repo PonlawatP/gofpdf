@@ -2270,6 +2270,29 @@ func (f *Fpdf) SetAcceptPageBreakFunc(fnc func() bool) {
 	f.acceptPageBreak = fnc
 }
 
+// adjustThaiText adjusts the text to add offsets for floating marks
+func adjustThaiText(txt string) string {
+	adjusted := ""
+	for _, r := range txt {
+		if isFloatingMark(r) {
+			adjusted += fmt.Sprintf("\\y%.2f", -2.0) // Adjust Y offset
+		}
+		adjusted += string(r)
+	}
+	return adjusted
+}
+
+// isFloatingMark checks if a rune is a Thai floating mark
+func isFloatingMark(r rune) bool {
+	thaiFloatingMarks := []rune{'์', '้', '็', '๊', '๋'}
+	for _, mark := range thaiFloatingMarks {
+		if r == mark {
+			return true
+		}
+	}
+	return false
+}
+
 // CellFormat prints a rectangular cell with optional borders, background color
 // and character string. The upper-left corner of the cell corresponds to the
 // current position. The text can be aligned or centered. After the call, the
@@ -2460,7 +2483,7 @@ func (f *Fpdf) CellFormat(w, h float64, txtStr, borderStr string, ln int,
 			}
 			bt := (f.x + dx) * k
 			td := (f.h - (f.y + dy + .5*h + .3*f.fontSize)) * k
-			s.printf("BT %.2f %.2f Td (%s)Tj ET", bt, td, txt2)
+			s.printf("BT %.2f %.2f Td (%s)Tj ET", bt, td, adjustThaiText(txt2))
 			//BT %.2F %.2F Td (%s) Tj ET',(f.x+dx)*k,(f.h-(f.y+.5*h+.3*f.FontSize))*k,txt2);
 		}
 
@@ -2925,7 +2948,7 @@ func (f *Fpdf) WriteLinkID(h float64, displayStr string, linkID int) {
 //
 // width indicates the width of the box the text will be drawn in. This is in
 // the unit of measure specified in New(). If it is set to 0, the bounding box
-//of the page will be taken (pageWidth - leftMargin - rightMargin).
+// of the page will be taken (pageWidth - leftMargin - rightMargin).
 //
 // lineHeight indicates the line height in the unit of measure specified in
 // New().
